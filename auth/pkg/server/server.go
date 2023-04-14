@@ -3,15 +3,18 @@ package server
 import (
 	"auth/pkg/utils"
 	"fmt"
+	l "log"
 	"net/http"
 	"time"
 
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 )
 
 type httpServer struct {
 	server *http.Server
 	router *mux.Router
+	Port   string
 }
 
 func NewServer(port string, keycloak *keycloak) *httpServer {
@@ -41,9 +44,27 @@ func NewServer(port string, keycloak *keycloak) *httpServer {
 		controller.login(writer, request)
 	}).Methods("GET")
 
-	authRouter.HandleFunc("/migration/egress", func(writer http.ResponseWriter, request *http.Request) {
+	// map url routes to controller's methods
+	noAuthRouter.HandleFunc("/insecure/migration/egress", func(writer http.ResponseWriter, request *http.Request) {
+
 		controller.getEgress(writer, request)
 	}).Methods("GET")
+
+	// map url routes to controller's methods
+	noAuthRouter.HandleFunc("/insecure/migration/restricted", func(writer http.ResponseWriter, request *http.Request) {
+
+		controller.getRestricted(writer, request)
+	}).Methods("GET")
+
+	// map url routes to controller's methods
+	noAuthRouter.HandleFunc("/insecure/migration/mdm", func(writer http.ResponseWriter, request *http.Request) {
+
+		controller.getMDM(writer, request)
+	}).Methods("GET")
+
+	authRouter.HandleFunc("/migration/egress", EnableCors(func(writer http.ResponseWriter, request *http.Request) {
+		controller.getEgress(writer, request)
+	})).Methods("GET")
 
 	authRouter.HandleFunc("/migration/restricted", func(writer http.ResponseWriter, request *http.Request) {
 		controller.getRestricted(writer, request)
@@ -66,17 +87,20 @@ func NewServer(port string, keycloak *keycloak) *httpServer {
 			ReadTimeout:  time.Hour,
 		},
 		router: router,
+		Port:   port,
 	}
 
 	return s
 }
 
-func (s *httpServer) Listen(log utils.Log) error {
+func (s *httpServer) Listen(log utils.Log) {
 
-	err := s.server.ListenAndServe()
-	if err != nil {
-		log.Printf("Error while serving: %s", err.Error())
+	headersOk := handlers.AllowedHeaders([]string{"X-Requested-With"})
+	originsOk := handlers.AllowedOrigins([]string{"*"})
+	methodsOk := handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "OPTIONS"})
 
-	}
-	return err
+	// start server listen
+	// with error handling
+	l.Fatal(http.ListenAndServe(":"+s.Port, handlers.CORS(originsOk, headersOk, methodsOk)(s.router)))
+
 }
