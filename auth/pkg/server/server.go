@@ -36,10 +36,10 @@ func NewServer(port string, keycloak *keycloak) *httpServer {
 	controller := newController(keycloak)
 
 	// map url routes to controller's methods
-	noAuthRouter.HandleFunc("/login", func(writer http.ResponseWriter, request *http.Request) {
+	noAuthRouter.HandleFunc("/login/{username}/{password}", func(writer http.ResponseWriter, request *http.Request) {
 
 		controller.login(writer, request)
-	}).Methods("POST")
+	}).Methods("GET")
 
 	authRouter.HandleFunc("/migration/egress", func(writer http.ResponseWriter, request *http.Request) {
 		controller.getEgress(writer, request)

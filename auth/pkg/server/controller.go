@@ -8,6 +8,8 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+
+	"github.com/gorilla/mux"
 )
 
 type Members struct {
@@ -55,11 +57,17 @@ func newController(keycloak *keycloak) *controller {
 func (c *controller) login(w http.ResponseWriter, r *http.Request) {
 
 	rq := &loginRequest{}
-	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(rq); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+	params := mux.Vars(r)
+	rq.Username = params["username"]
+	rq.Password = params["password"]
+	fmt.Println("Username: ", rq.Username)
+	fmt.Println("Password: ", rq.Password)
+	// CORS ISSUES - GET FOR NOW
+	// decoder := json.NewDecoder(r.Body)
+	// if err := decoder.Decode(rq); err != nil {
+	// 	http.Error(w, err.Error(), http.StatusBadRequest)
+	// 	return
+	// }
 
 	jwt, err := c.keycloak.gocloak.Login(context.Background(),
 		c.keycloak.clientId,
