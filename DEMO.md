@@ -1,5 +1,7 @@
 # Demo
 
+[Architecture](https://docs.google.com/drawings/d/1fEKwwCLdvmaHh-Krh3xsZgR4WwApjZWvWGZU2S2dTo4/edit)
+
 ## Setup Cluster
 
 ```bash
@@ -113,6 +115,12 @@ Access Type should be set to confidental
 - add groups
 - add users
 
+
+Run the Auth Service 
+
+```bash
+KC_URL=http://localhost:8081 KC_CLIENT_ID=migration-app KC_CLIENT_SECRET=RZPrJR3yct4TsbaG3UlgPBlIh4Ln7m3E KC_REALM=eda go run cmd/*.go serve --port 8083
+```
 ## Deploy Auth
 
 Wait for Auth to be ready

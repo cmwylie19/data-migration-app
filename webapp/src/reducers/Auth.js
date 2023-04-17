@@ -6,7 +6,7 @@ let initialState = {
     given_name: "",
     family_name: "",
     email: "",
-    theme: "light"
+    theme: "dark"
 }
 
 const AuthReducer = (state, action) => {

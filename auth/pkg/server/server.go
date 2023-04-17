@@ -39,6 +39,12 @@ func NewServer(port string, keycloak *keycloak) *httpServer {
 	controller := newController(keycloak)
 
 	// map url routes to controller's methods
+	noAuthRouter.HandleFunc("/login_secure", func(writer http.ResponseWriter, request *http.Request) {
+
+		controller.postLogin(writer, request)
+	}).Methods("POST")
+
+	// map url routes to controller's methods
 	noAuthRouter.HandleFunc("/login/{username}/{password}", func(writer http.ResponseWriter, request *http.Request) {
 
 		controller.login(writer, request)
@@ -64,11 +70,11 @@ func NewServer(port string, keycloak *keycloak) *httpServer {
 
 	authRouter.HandleFunc("/migration/egress", EnableCors(func(writer http.ResponseWriter, request *http.Request) {
 		controller.getEgress(writer, request)
-	})).Methods("GET")
+	})).Methods("POST")
 
 	authRouter.HandleFunc("/migration/restricted", func(writer http.ResponseWriter, request *http.Request) {
 		controller.getRestricted(writer, request)
-	}).Methods("GET")
+	}).Methods("POST")
 
 	authRouter.HandleFunc("/migration/mdm", func(writer http.ResponseWriter, request *http.Request) {
 		controller.getMDM(writer, request)

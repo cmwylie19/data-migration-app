@@ -54,6 +54,65 @@ func newController(keycloak *keycloak) *controller {
 	}
 }
 
+func (c *controller) postLogin(w http.ResponseWriter, r *http.Request) {
+
+	rq := &loginRequest{}
+
+	// CORS ISSUES - GET FOR NOW
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(rq); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	jwt, err := c.keycloak.gocloak.Login(context.Background(),
+		c.keycloak.clientId,
+		c.keycloak.clientSecret,
+		c.keycloak.realm,
+		rq.Username,
+		rq.Password)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusForbidden)
+		return
+	}
+
+	// var token Token
+	_, claims, err := c.keycloak.gocloak.DecodeAccessToken(context.Background(), jwt.AccessToken, c.keycloak.realm)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Invalid or malformed token: %s", err.Error()), http.StatusUnauthorized)
+		return
+	}
+	// arr := strings.Split(jwt.AccessToken, ".")
+	// fmt.Printf("jwt: %+v\n", arr[1])
+	// uDec, _ := b64.URLEncoding.DecodeString(arr[1])
+	// uDec = append(uDec, '}')
+	// fmt.Println("uDec: ", string(uDec))
+	// unmarshall_err := json.Unmarshal(uDec, &token)
+	// if unmarshall_err != nil {
+	// 	log.Fatal("Unmarshall error: ", unmarshall_err.Error())
+	// }
+	fmt.Printf("\nCLAIMS %+v\n", claims)
+	realm_access, _ := (*claims)["realm_access"].(map[string]interface{})
+	rs := &loginResponse{
+		AccessToken:  jwt.AccessToken,
+		RefreshToken: jwt.RefreshToken,
+		ExpiresIn:    jwt.ExpiresIn,
+		Roles:        utils.ExtractRoles(realm_access),
+		GivenName:    (*claims)["given_name"].(string),
+		FamilyName:   (*claims)["family_name"].(string),
+		Email:        (*claims)["email"].(string),
+	}
+
+	rsJs, _ := json.Marshal(rs)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(rsJs)
+}
+
 func (c *controller) login(w http.ResponseWriter, r *http.Request) {
 
 	rq := &loginRequest{}
