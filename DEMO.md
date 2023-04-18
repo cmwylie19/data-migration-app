@@ -198,3 +198,19 @@ Wait for auth to be ready
 ```bash
 k wait --for=condition=Ready pod -l app=auth -n data --timeout=180s
 ```
+
+
+Deploy Migration Service
+
+```bash
+cd migration
+go run main.go
+```
+
+Run the webapp 
+
+```bash
+cd webapp
+yarn 
+yarn start 
+```
